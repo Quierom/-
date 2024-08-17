@@ -1,0 +1,106 @@
+#include <iostream>
+#include <cstdint> 
+#include <fstream>
+#include <stdlib.h>
+
+struct hdr {
+    float angle;
+    float data;
+    int64_t Time;
+};
+
+void imitation (hdr* arr, int64_t period, float ω, int window_size, int noise) { //функция иммитация потока данных
+    srand(arr[0].Time);
+    hdr new_data;
+    new_data.data = float(rand())/float(rand());
+    new_data.Time = arr[0].Time + period;
+    
+    float rnd_num=float(RAND_MAX/2)-rand();
+    if (rnd_num>0) {
+        rnd_num = 1.0;
+    }
+    else if (rnd_num<0) {
+            rnd_num = -1.0;
+    }
+    else {
+            rnd_num = 0;
+    }
+    new_data.angle = arr[0].angle + ω * float(period)/1000+rnd_num*arr[0].angle*noise/100;
+    if(new_data.angle >= 360) {
+        new_data.angle = new_data.angle - 360;
+    }
+    
+    for (int i = window_size - 1; i >= 1; i--) {
+        arr[i] = arr[i-1];
+    }
+    arr[0] = new_data;
+}
+
+float average (hdr* arr, int window_size) { //
+    float AVG = 0;
+    for (int i = 0; i < window_size; i++) {
+        AVG = AVG + arr[i].angle;
+    }
+    AVG = AVG / window_size;
+    return AVG;
+}
+
+int main()
+{
+    int window_size, data_size;
+    int64_t period = 10; //период опроса 10мс (100hz)
+    float ω; //угловая скорость в градус*секунду
+    int noise; 
+    
+    do {
+        std::cout << "Введите кол-во данных (от 100 до 1000): ";
+        std::cin >> data_size;
+        
+    } 
+    while (data_size < 100 || data_size > 1000);  
+    // Запрос на ввод размера окна от 3 до 21
+    do {
+        std::cout << "Введите размер окна (от 3 до 21): ";
+        std::cin >> window_size;
+        
+    } 
+    while (window_size < 3 || window_size > 21);
+    
+    do {
+    std::cout << "Введите угловую скорость (от 0 до 3600), градус*сек: ";
+    std::cin >> ω;
+    }
+    while (ω < 0 || ω >= 3600);
+    
+    do {
+        std::cout << "Введите уровень шума (от 0 до 10%) относительно значения угла): ";
+        std::cin >> noise;
+        
+    } 
+    while (noise < 0 || noise > 10); 
+        
+    // Создание динамического массива
+    hdr* arr = new hdr[window_size];
+     // Вывод элементов массива
+    std::ofstream out;
+    out.open("datatext.txt"); 
+    if (out.is_open())
+    {
+    for (int i = 0; i < data_size; i++){
+        out << "Время: " << arr[window_size/2+1].Time << " ";
+        out << "Данные: " <<  arr[window_size/2+1].data << " ";
+        out << "Угол: " << arr[window_size/2+1].angle << " ";
+        out << "Угол осредненный: " << average(arr, window_size) << " ";
+        out << "\n";  
+        imitation(arr,  period,  ω, window_size, noise);
+        }
+    }
+    
+    // Освобождение выделенной памяти
+    delete[] arr;
+    out.close(); 
+    return 0;
+}
+
+
+

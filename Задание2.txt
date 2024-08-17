@@ -1,0 +1,43 @@
+#include <iostream>
+#include <cmath>
+#include <fstream>
+
+int main() {
+    const double radarRadius = 300.0; // Радиус действия РЛС в метрах
+    const double period = 2.5;          // Период полного обращения РЛС в секундах
+    const double angularSpeed = 2 * M_PI / period; // Угловая скорость вращения РЛС
+    
+    double time = 0.0;                   // Текущее время
+    double lastDetectionTime = 0.0;      // Время предыдущего обнаружения
+    const double detectionThreshold = 300; // Порог для обнаружения цели
+
+    std::ofstream logFile("detection_log.txt");
+    if (!logFile.is_open()) {
+        std::cerr << "Не удается открыть файл для записи." << std::endl;
+        return 1;
+    }
+
+    while (time <= 10.0) { // Прерываем моделирование после 10 секунд
+        double angle = angularSpeed * time; // Угол поворота РЛС
+        double targetX = radarRadius * cos(angle); // Координаты цели по оси X (делает круг)
+        double targetY = radarRadius * sin(angle); // Координаты цели по оси Y
+
+        if (fabs(targetX) <= detectionThreshold && fabs(targetY) <= detectionThreshold) { // цель считается обнаруженной
+            std::cout << "Цель обнаружена на координате: " << targetX << " метров на оси X" << std::endl;
+            std::cout << "Время обнаружения: " << time << " секунд" << std::endl;
+            std::cout << "Разница во времени обнаружения: " << time - lastDetectionTime/period << " секунд" << std::endl;
+
+            // Сохраняем в лог-файл
+            logFile << "Цель обнаружена на координате: " << targetX << " метров на оси X, "
+                     << "Время: " << time << " секунд, "
+                     << "Разница во времени: " << time - lastDetectionTime << " секунд" << std::endl;
+
+            lastDetectionTime = time;  // Обновляем время последнего обнаружения
+        }
+
+        time += 0.7; // Шаг по времени
+    }
+
+    logFile.close(); // Закрываем лог-файл
+    return 0;
+}

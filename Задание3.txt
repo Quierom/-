@@ -1,0 +1,61 @@
+#include <iostream>
+#include <cmath>
+#include <random>
+#include <chrono>
+#include <thread>
+
+int main() {
+    const int windowSize = 5; // Размер окна для скользящего среднего
+    double tangageSum = 0, rollSum = 0, yawSum = 0;
+    double tangageMean = 0, rollMean = 0, yawMean = 0;
+    double tangageSd = 0, rollSd = 0, yawSd = 0;
+    int count = 0;
+
+    // Инициализация генератора случайных чисел и распределений
+    std::random_device rd;  
+    std::mt19937 gen(rd()); 
+    std::uniform_real_distribution<> tangageDist(-90.0, 90.0); // Распределение для тангажа
+    std::uniform_real_distribution<> rollDist(-90.0, 90.0); // Распределение для крена
+    std::uniform_real_distribution<> yawDist(0.0, 360.0); // Распределение для курса
+
+    // Определяем максимальное количество итераций
+    const int maxIterations = windowSize*3; // Количество итераций для выполнения
+
+    for (int i = 0; i < maxIterations; ++i) {
+        // Генерация случайных значений для tangage, roll и yaw
+        double tangage = tangageDist(gen);
+        double roll = rollDist(gen);
+        double yaw = yawDist(gen);
+
+        tangageSum += tangage;
+        rollSum += roll;
+        yawSum += yaw;
+
+        count++;
+
+        if (count >= windowSize) {
+            // Вычисляем средние значения
+            tangageMean = tangageSum / windowSize;
+            rollMean = rollSum / windowSize;
+            yawMean = yawSum / windowSize;
+
+            // СКО
+            tangageSd = sqrt((tangage - tangageMean) * (tangage - tangageMean) / windowSize);
+            rollSd = sqrt((roll - rollMean) * (roll - rollMean) / windowSize);
+            yawSd = sqrt((yaw - yawMean) * (yaw - yawMean) / windowSize);
+
+            // Выводим результаты
+            std::cout << "Тангаж среднее: " << tangageMean << ", СКО: " << tangageSd << std::endl;
+            std::cout << "Крен среднее: " << rollMean << ", СКО: " << rollSd << std::endl;
+            std::cout << "Курс среднее: " << yawMean << ", СКО: " << yawSd << std::endl;
+            std::cout << "\n";
+            // Сбрасываем суммы и счетчик
+            tangageSum = 0;
+            rollSum = 0;
+            yawSum = 0;
+            count = 0;
+        }
+    }
+
+    return 0;
+}

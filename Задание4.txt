@@ -1,0 +1,48 @@
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <random>
+#include <string>
+
+struct Param {
+    int priority;
+    std::string type; 
+    float value;
+};
+
+// Функция для генерации случайного значения с нормальным распределением
+float generateNormal(float mean, float stddev) { //Для генерации случайного числа c математическим ожиданием (mean) и стандартным отклонением (stddev)
+    std::random_device rd;
+    std::mt19937 gen(rd()); //алгоритм вихря Марсена
+    std::normal_distribution<float> dist(mean, stddev);
+    return dist(gen);
+}
+
+int main() {
+    // Генерация вектора из 100 структур
+    std::vector<Param> params(100);
+    std::string types[] = {"value", "temperature", "power"};
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+
+    for (auto& param : params) { //проходим по каждому элементу вектора, присваивая каждый элемент переменной
+        param.priority = std::uniform_int_distribution<int>(0, 3)(gen); // Заполнение поля priority случайными числами от 0 до 3
+        param.type = types[std::uniform_int_distribution<int>(0, 2)(gen)]; // Заполнение поля type случайными значениями из набора строк
+        param.value = generateNormal(50, 20); // Заполнение поля value по нормальному закону с математическим ожиданием 50 и СКО 20
+    }
+
+    // Сортировка
+    std::sort(params.begin(), params.end(), [](const Param& a, const Param& b) { // a и b - элементы контейнера "params"
+        if (a.priority != b.priority) return a.priority > b.priority; // по убыванию
+        if (a.type != b.type) return a.type < b.type; // по алфавиту
+        return a.value < b.value; // по возрастанию
+    });
+
+    // Вывод отсортированного набора структур
+    for (const auto& param : params) {
+        std::cout << "Priority: " << param.priority << ", Type: " << param.type << ", Value: " << param.value << std::endl;
+    }
+
+    return 0;
+}

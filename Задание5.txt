@@ -1,0 +1,75 @@
+#include <iostream>
+#include <vector>
+#include <random>
+#include <cmath> 
+
+const int N = 1000; // Количество импульсов
+const double Tp = 0.0003; // Период обучения цели в сек
+
+// Генерация случайного числа в диапазоне [min, max]
+double random(double min, double max) {
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
+    std::uniform_real_distribution<double> dis(min, max);
+    return dis(gen);
+}
+
+// вычисления косинуса (для малых углов)
+double my_cos(double x) {
+    // Приводим x в диапазон [0, 2*Pi]
+    x = x - (int)(x / (2 * M_PI)) * (2 * M_PI);
+    return 1.0 - (x * x) / 2.0; // Линейная аппроксимация для малых x
+}
+
+// вычисление логарифма
+double my_log(double x) {
+    if (x <= 0) return NAN; // Возвращаем очень отрицательное значение для логарифма <= 0
+    double result = 0.0;
+    while (x > 2.0) {
+        x /= 2.0;
+        result += 1.0; // Увеличиваем результат на 1 для каждого деления
+    }
+    double term = (x - 1) / (x + 1);
+    result += 2 * term; // Логарифм на интервале [1,2]
+    return result;
+}
+
+// Функция для расчета скоростного спектра
+void calculateSpectrum(const std::vector<double>& pulses) { 
+    std::vector<double> spectrum(N, 0.0);
+
+    // Расчет спектра
+    for (int k = 0; k < N; ++k) {
+        for (int n = 0; n < N; ++n) {
+            spectrum[k] += pulses[n] * my_cos(2 * M_PI * k * n / N);
+        }
+        spectrum[k] = 20 * my_log(std::abs(spectrum[k])); // Уровень в дБ
+    }
+
+    // Выводим уровень спектра в дБ
+    for (int k = 0; k < N; ++k) {
+        std::cout << "Уровень спектра " << k << " = " << spectrum[k] << " дБ" << std::endl;
+    }
+}
+
+int main() {
+    std::vector<double> pulses(N, 0.0);
+
+    for (int n = 0; n < N; ++n) {
+        double Vm = random(0.0, 1.0); // Скорость отражения от местного предмета
+        double Am = random(0.0, 1.0); // Амплитуда отражения от местного предмета
+        double Vc = random(1.0, 2.0); // Скорость отражения от цели
+        double Ac = random(1.0, 2.0); // Амплитуда отражения от цели
+        double noise = random(0.0, 0.5); // Рэлеевский шум
+
+        // импульс
+        pulses[n] = Am * my_cos(2 * M_PI * Vm * n * Tp) +
+                     Ac * my_cos(2 * M_PI * Vc * n * Tp) +
+                     noise;
+    }
+
+    // скоростной спектр
+    calculateSpectrum(pulses);
+
+    return 0;
+}
